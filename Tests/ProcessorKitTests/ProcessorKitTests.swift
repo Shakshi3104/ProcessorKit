@@ -2,10 +2,22 @@
     @testable import ProcessorKit
 
     final class ProcessorKitTests: XCTestCase {
-        func testExample() {
-            // This is an example of a functional test case.
-            // Use XCTAssert and related functions to verify your tests produce the correct
-            // results.
-            XCTAssertEqual(ProcessorKit().text, "Hello, World!")
+        let usage = CPU.systemUsage()
+        
+        func testSystemUsage() {
+            XCTAssertTrue(usage.system >= 0.0)
+        }
+        
+        func testUserUsage() {
+            XCTAssertTrue(usage.user >= 0.0)
+        }
+
+        func testIdleUsage() {
+            XCTAssertTrue(usage.idle >= 0.0)
+        }
+
+        func testAppUsage() {
+            let appUsage = CPU.appUsage()
+            XCTAssertTrue(appUsage >= 0.0)
         }
     }
