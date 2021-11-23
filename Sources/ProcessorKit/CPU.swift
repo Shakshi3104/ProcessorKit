@@ -7,6 +7,15 @@
 
 import Foundation
 
+public struct ProcessorUsage {
+    public var user: Double
+    public var system: Double
+    public var idle: Double
+    public var nice: Double
+}
+
+// MARK: - CPU
+
 private let HOST_CPU_LOAD_INFO_COUNT : mach_msg_type_number_t = UInt32(MemoryLayout<host_cpu_load_info_data_t>.size / MemoryLayout<integer_t>.size)
 
 public class CPU: NSObject {
