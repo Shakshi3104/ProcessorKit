@@ -66,6 +66,7 @@ public class CPU: NSObject {
     }
     
     /// get app CPU usage (% CPU on Activity Monitor)
+    /// https://qiita.com/rinov/items/f30d386fb7b8b12278a5
     public static func appUsage() -> Float {
         var result: Int32
         var threadList = UnsafeMutablePointer<UInt32>.allocate(capacity: 1)
@@ -94,5 +95,54 @@ public class CPU: NSObject {
                     return !isIdle ? (Float(threadInfo.cpu_usage) / Float(TH_USAGE_SCALE)) * 100 : nil
                 }
                 .reduce(0, +)
+    }
+    
+    /// get each core CPU usage
+    /// https://github.com/daisuke-t-jp/Mach-Swift/blob/master/Mach-Swift/Mach/Host/Processor/MachHostProcessorCPULoadInfo.swift
+    public static func coreUsage() -> [ProcessorUsage] {
+        var cpuCount: natural_t = 0
+        var cpuInfoArray: processor_info_array_t?
+        var cpuInfoCount: mach_msg_type_number_t = 0
+        
+        guard KERN_SUCCESS == host_processor_info(mach_host_self(), PROCESSOR_CPU_LOAD_INFO, &cpuCount, &cpuInfoArray, &cpuInfoCount) else {
+            return [ProcessorUsage]()
+        }
+        
+        do {
+            guard cpuCount > 0 else {
+                return [ProcessorUsage]()
+            }
+            
+            guard let cpuInfoArray = cpuInfoArray else {
+                return [ProcessorUsage]()
+            }
+            
+            defer {
+                vm_deallocate(mach_task_self_, vm_address_t(cpuInfoArray.pointee), vm_size_t(cpuInfoCount))
+            }
+            
+            var array = [ProcessorUsage]()
+            for i in 0..<cpuCount {
+                let index = Int32(i) * CPU_STATE_MAX
+                
+                let userTick = UInt32(cpuInfoArray[Int(index + CPU_STATE_USER)])
+                let systemTick = UInt32(cpuInfoArray[Int(index + CPU_STATE_SYSTEM)])
+                let idleTick = UInt32(cpuInfoArray[Int(index + CPU_STATE_IDLE)])
+                let niceTick = UInt32(cpuInfoArray[Int(index + CPU_STATE_NICE)])
+                
+                let totalTick = userTick + systemTick + idleTick + niceTick
+                
+                let user = Double(userTick) / Double(totalTick) * 100.0
+                let system = Double(systemTick) / Double(totalTick) * 100.0
+                let idle = Double(idleTick) / Double(totalTick) * 100.0
+                let nice = Double(niceTick) / Double(totalTick) * 100.0
+                
+                let usage = ProcessorUsage(user: user, system: system, idle: idle, nice: nice)
+                
+                array.append(usage)
+            }
+            
+            return array
+        }
     }
 }
