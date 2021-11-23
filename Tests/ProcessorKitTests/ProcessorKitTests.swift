@@ -22,4 +22,13 @@
             let appUsage = CPU.appUsage()
             XCTAssertTrue(appUsage >= 0.0)
         }
+        
+        func testMemoryUsage() {
+            let memoryUsage = Memory.appUsage()
+            XCTAssertNotNil(memoryUsage)
+            
+            if let memoryUsage = memoryUsage {
+                XCTAssertTrue(memoryUsage >= 0)
+            }
+        }
     }
