@@ -99,6 +99,8 @@ public class CPU: NSObject {
     
     /// get each core CPU usage
     /// https://github.com/daisuke-t-jp/Mach-Swift/blob/master/Mach-Swift/Mach/Host/Processor/MachHostProcessorCPULoadInfo.swift
+    private static var processorPrevious: processor_info_array_t?
+    
     public static func coreUsage() -> [ProcessorUsage] {
         var cpuCount: natural_t = 0
         var cpuInfoArray: processor_info_array_t?
@@ -130,17 +132,40 @@ public class CPU: NSObject {
                 let idleTick = UInt32(cpuInfoArray[Int(index + CPU_STATE_IDLE)])
                 let niceTick = UInt32(cpuInfoArray[Int(index + CPU_STATE_NICE)])
                 
-                let totalTick = userTick + systemTick + idleTick + niceTick
+                let user: Double
+                let system: Double
+                let idle: Double
+                let nice: Double
                 
-                let user = Double(userTick) / Double(totalTick) * 100.0
-                let system = Double(systemTick) / Double(totalTick) * 100.0
-                let idle = Double(idleTick) / Double(totalTick) * 100.0
-                let nice = Double(niceTick) / Double(totalTick) * 100.0
+                if let processorPrevious = processorPrevious {
+                    let userDiff = userTick - UInt32(processorPrevious[Int(index + CPU_STATE_USER)])
+                    let systemDiff = systemTick - UInt32(processorPrevious[Int(index + CPU_STATE_SYSTEM)])
+                    let idleDiff = idleTick - UInt32(processorPrevious[Int(index + CPU_STATE_IDLE)])
+                    let niceDiff = niceTick - UInt32(processorPrevious[Int(index + CPU_STATE_NICE)])
+                    
+                    let totalDiff = userDiff + systemDiff + idleDiff + niceDiff
+                    
+                    user = Double(userDiff) / Double(totalDiff) * 100.0
+                    system = Double(systemDiff) / Double(totalDiff) * 100.0
+                    idle = Double(idleDiff) / Double(totalDiff) * 100.0
+                    nice = Double(niceDiff) / Double(totalDiff) * 100.0
+                    
+                } else {
+                
+                    let totalTick = userTick + systemTick + idleTick + niceTick
+                    
+                    user = Double(userTick) / Double(totalTick) * 100.0
+                    system = Double(systemTick) / Double(totalTick) * 100.0
+                    idle = Double(idleTick) / Double(totalTick) * 100.0
+                    nice = Double(niceTick) / Double(totalTick) * 100.0
+                }
                 
                 let usage = ProcessorUsage(user: user, system: system, idle: idle, nice: nice)
                 
                 array.append(usage)
             }
+            
+            processorPrevious = cpuInfoArray
             
             return array
         }
