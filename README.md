@@ -1,5 +1,9 @@
 # ProcessorKit
 
+<div align="center">
+    <img src="processorkit_icon.png" height=128 />
+</div>
+
 ProcessorKit is a package for getting CPU usage on iPhone, iPad, and Mac.
 
 ## Requirements
